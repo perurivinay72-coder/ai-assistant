@@ -17,7 +17,7 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",   // ✅ supported & cheap
         messages: [
           {
             role: "system",
@@ -27,21 +27,26 @@ export default async function handler(req, res) {
             role: "user",
             content: message
           }
-        ]
+        ],
+        temperature: 0.7
       })
     });
 
     const data = await response.json();
 
-    const reply =
-      data.choices?.[0]?.message?.content ||
-      "Sorry, I could not reply.";
+    // 🔴 IMPORTANT: log real OpenAI errors
+    if (!response.ok) {
+      return res.status(200).json({
+        reply: "OpenAI error: " + (data.error?.message || "Unknown error")
+      });
+    }
 
+    const reply = data.choices[0].message.content;
     res.status(200).json({ reply });
 
   } catch (error) {
-    res.status(500).json({
-      reply: "AI error occurred"
+    res.status(200).json({
+      reply: "Server error: " + error.message
     });
   }
 }
