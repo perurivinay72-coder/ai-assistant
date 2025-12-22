@@ -1,43 +1,34 @@
-// Get elements
 const chatBox = document.getElementById("chatBox");
 const userInput = document.getElementById("userInput");
 
-// Send text message
-function sendMessage() {
-    if (userInput.value.trim() === "") return;
-
-    addMessage("You", userInput.value);
-    addMessage("Assistant", "I heard you.");
-
-    userInput.value = "";
-}
-
-// Add message to chat
 function addMessage(sender, text) {
-    chatBox.innerHTML += `<p><b>${sender}:</b> ${text}</p>`;
-    chatBox.scrollTop = chatBox.scrollHeight;
+  chatBox.innerHTML += `<p><b>${sender}:</b> ${text}</p>`;
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Voice input
-function startVoice() {
-    if (!('webkitSpeechRecognition' in window)) {
-        alert("Your browser does not support voice input.");
-        return;
-    }
+async function sendMessage() {
+  const message = userInput.value.trim();
+  if (!message) return;
 
-    const recognition = new webkitSpeechRecognition();
-    recognition.lang = 'en-IN'; // mixed English (works okay with Telugu-English mix)
-    recognition.continuous = false;
-    recognition.interimResults = false;
+  addMessage("You", message);
+  userInput.value = "";
 
-    recognition.start();
+  addMessage("Assistant", "Thinking...");
 
-    recognition.onresult = function (event) {
-        const speechText = event.results[0][0].transcript;
-        userInput.value = speechText;
-    };
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message })
+    });
 
-    recognition.onerror = function () {
-        alert("Voice recognition error. Try again.");
-    };
+    const data = await response.json();
+
+    chatBox.lastChild.remove();
+    addMessage("Assistant", data.reply);
+
+  } catch (err) {
+    chatBox.lastChild.remove();
+    addMessage("Assistant", "Backend error");
+  }
 }
