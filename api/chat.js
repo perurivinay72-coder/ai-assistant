@@ -10,8 +10,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ reply: "No message received" });
     }
 
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: {
@@ -31,9 +31,9 @@ export default async function handler(req, res) {
       }
     );
 
-    const data = await geminiResponse.json();
+    const data = await response.json();
 
-    if (!geminiResponse.ok) {
+    if (!response.ok) {
       return res.status(200).json({
         reply: "Gemini error: " + (data.error?.message || "Unknown error")
       });
