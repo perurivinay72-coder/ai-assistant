@@ -10,38 +10,39 @@ export default async function handler(req, res) {
       return res.status(400).json({ reply: "No message received" });
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",   // ✅ supported & cheap
-        messages: [
-          {
-            role: "system",
-            content: "You are a friendly but sometimes strict personal assistant for a college student."
-          },
-          {
-            role: "user",
-            content: message
-          }
-        ],
-        temperature: 0.7
-      })
-    });
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are a friendly but sometimes strict personal assistant for a college student.\n\nUser: ${message}`
+                }
+              ]
+            }
+          ]
+        })
+      }
+    );
 
-    const data = await response.json();
+    const data = await geminiResponse.json();
 
-    // 🔴 IMPORTANT: log real OpenAI errors
-    if (!response.ok) {
+    if (!geminiResponse.ok) {
       return res.status(200).json({
-        reply: "OpenAI error: " + (data.error?.message || "Unknown error")
+        reply: "Gemini error: " + (data.error?.message || "Unknown error")
       });
     }
 
-    const reply = data.choices[0].message.content;
+    const reply =
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Gemini did not return a response";
+
     res.status(200).json({ reply });
 
   } catch (error) {
@@ -50,4 +51,3 @@ export default async function handler(req, res) {
     });
   }
 }
-
